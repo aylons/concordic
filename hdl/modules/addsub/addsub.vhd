@@ -6,7 +6,7 @@
 -- Author     : Aylons  <concordic@aylons.com>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-05-03
+-- Last update: 2014-05-04
 -- Platform   : 
 -- Standard   : VHDL'93/02/08
 -------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ entity addsub is
   port (
     a_i      : in  signed;
     b_i      : in  signed;
-    sel_i    : in  std_logic;
+    sel_i    : in  boolean;
     clk_i    : in  std_logic;
     result_o : out signed
     );
@@ -40,7 +40,7 @@ end entity addsub;
 
 -------------------------------------------------------------------------------
 
-architecture str of addsub is
+architecture str of addsub is 
 
 begin  -- architecture str
 
@@ -54,10 +54,10 @@ begin  -- architecture str
 
     process(clk_i) is
     begin
-      if(sel_i = '0') then
-        result_o <= a_i + b_i;
-      else
+      if(sel_i = true) then
         result_o <= a_i - b_i;
+      else
+        result_o <= a_i + b_i;
       end if;
     end process;
 
