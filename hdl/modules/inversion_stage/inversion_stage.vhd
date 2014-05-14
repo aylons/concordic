@@ -1,17 +1,18 @@
 -------------------------------------------------------------------------------
--- Title      : Dynamic adder/subtractor
+-- Title      : Inversion stage
 -- Project    : 
 -------------------------------------------------------------------------------
--- File       : addsub.vhd
--- Author     : Aylons  <concordic@aylons.com>
+-- File       : inversion_stage.vhd
+-- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
--- Created    : 2014-05-03
+-- Created    : 2014-05-09
 -- Last update: 2014-05-14
 -- Platform   : 
--- Standard   : VHDL'93/02/08
+-- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: Depening on sub_i, result_o may be a_i + b_i or a_i - b_i.
--- The three widths must all be the same.
+-- Description: The CORDIC algorithm only converges to the proper value if the
+-- initial point to be converted is in the right half plane. So, if the point is in
+-- the left halfplane, rotate it 180o and apply the rotation value .
 -------------------------------------------------------------------------------
 -- This file is part of Concordic.
 --
@@ -27,57 +28,68 @@
 --
 -- You should have received a copy of the GNU General Public License
 -- along with Foobar. If not, see <http://www.gnu.org/licenses/>.
--- Copyright (c) 2014 
+-- Copyright (c) 2014 Aylons Hazzud
 -------------------------------------------------------------------------------
 -- Revisions  :
 -- Date        Version  Author  Description
--- 2014-05-03  1.0      aylons  Created
+-- 2014-05-09  1.0      aylons  Created
 -------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 -------------------------------------------------------------------------------
 
-entity addsub is
+entity inversion_stage is
 
-  port (
-    a_i      : in  signed;
-    b_i      : in  signed;
-    sub_i    : in  boolean;
-    clk_i    : in  std_logic;
-    ce_i     : in  std_logic;
-    result_o : out signed
+  generic (
+    g_mode : string := "rect_to_polar"
     );
 
-end entity addsub;
+  port (
+    x_i   : in  signed;
+    y_i   : in  signed;
+    z_i   : in  signed;
+    clk_i : in  std_logic;
+    ce_i  : in  std_logic;
+    x_o   : out signed;
+    y_o   : out signed;
+    z_o   : out signed
+    );
+
+end entity inversion_stage;
 
 -------------------------------------------------------------------------------
 
-architecture str of addsub is
+architecture str of inversion_stage is
+  constant width          : integer                  := z_i'length;
+  constant rotation_angle : signed := to_signed(integer(-2**(width-1)),width);
+  -- rotate 180o
 
 begin  -- architecture str
 
-  assert a_i'length = b_i'length
-    report "a_i and b_i have different widths"
-    severity error;
-
-  assert a_i'length = result_o'length
-    report "invalid result_o width"
-    severity error;
-
   process(clk_i) is
+    variable left_halfplane : boolean;
   begin
     if rising_edge(clk_i) then
       if ce_i = '1' then
-        if(sub_i = true) then
-          result_o <= a_i - b_i;
+
+        left_halfplane := (x_i < 0);
+
+        if left_halfplane then
+          x_o <= -x_i;
+          y_o <= -y_i;
+          z_o <= rotation_angle;
         else
-          result_o <= a_i + b_i;
-        end if;
-      end if;
-    end if;
+          x_o <= x_i;
+          y_o <= y_i;
+          z_o <= to_signed(0, width);
+        end if;  -- left_halfplane
+
+      end if;  --clock enable
+    end if;  --rising edge
   end process;
 
 end architecture str;
