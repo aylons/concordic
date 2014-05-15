@@ -1,16 +1,16 @@
 -------------------------------------------------------------------------------
--- Title      : Rotation-mode cordic, slv version
+-- Title      : Vectoring-mode cordic, slv version
 -- Project    : 
 -------------------------------------------------------------------------------
--- File       : cordic_rotate_slv.vhd
+-- File       : cordic_vectoring_slv.vhd
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-13
--- Last update: 2014-05-14
+-- Last update: 2014-05-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: This is a top-block for rotation mode using concordic,
+-- Description: This is a top-block for vectoring mode using concordic,
 -- constrained standard_logic_vector version.
 -------------------------------------------------------------------------------
 -- This file is part of Concordic.
@@ -40,7 +40,7 @@ use ieee.numeric_std.all;
 
 -------------------------------------------------------------------------------
 
-entity cordic_rotate_slv is
+entity cordic_vectoring_slv is
 
   generic (
     g_stages : natural := 20;
@@ -48,27 +48,27 @@ entity cordic_rotate_slv is
     );
 
   port (
-    x_i     : in  std_logic_vector(g_width-1 downto 0) := "11000000";
-    y_i     : in  std_logic_vector(g_width-1 downto 0) := "11000000";
+    x_i     : in  std_logic_vector(g_width-1 downto 0);
+    y_i     : in  std_logic_vector(g_width-1 downto 0);
     clk_i   : in  std_logic;
     ce_i    : in  std_logic;
     mag_o   : out std_logic_vector(g_width-1 downto 0);
     phase_o : out std_logic_vector(g_width-1 downto 0)
     );
 
-end entity cordic_rotate_slv;
+end entity cordic_vectoring_slv;
 
 -------------------------------------------------------------------------------
 
-architecture str of cordic_rotate_slv is
+architecture str of cordic_vectoring_slv is
 
-  signal adjusted_x : signed(g_width-1 downto 0);
-  signal adjusted_y : signed(g_width-1 downto 0);
-  signal adjusted_z : signed(g_width-1 downto 0);
+  signal adjusted_x : signed(g_width-1 downto 0) := (others => '0');
+  signal adjusted_y : signed(g_width-1 downto 0) := (others => '0');
+  signal adjusted_z : signed(g_width-1 downto 0) := (others => '0');
 
-  signal mag_temp   : signed(g_width-1 downto 0);
-  signal phase_temp : signed(g_width-1 downto 0);
-  signal y_temp     : signed(g_width-1 downto 0);
+  signal mag_temp   : signed(g_width-1 downto 0) := (others => '0');
+  signal phase_temp : signed(g_width-1 downto 0) := (others => '0');
+  signal y_temp     : signed(g_width-1 downto 0) := (others => '0');
 
   component inversion_stage is
     generic (

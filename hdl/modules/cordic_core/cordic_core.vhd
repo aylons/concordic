@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-05-14
+-- Last update: 2014-05-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -69,7 +69,8 @@ end entity cordic_core;
 -------------------------------------------------------------------------------
 
 architecture str of cordic_core is
-  type wiring is array (0 to g_stages) of signed(x_i'range);
+  constant c_width : natural := x_i'length+1;
+  type wiring is array (0 to g_stages) of signed(c_width-1 downto 0);
   type control_wiring is array (0 to g_stages) of boolean;
 
   signal x_inter : wiring;
@@ -96,21 +97,22 @@ architecture str of cordic_core is
     variable const_vector : signed(width-1 downto 0);
   begin
     -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
+    -- only work for cordics up to 32 bit
     const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
     return const_vector;
   end function;
-  
+
 begin  -- architecture str
 
   --TODO: for now, it only generates a rect_to_polar CORDIC. Adapt so we can
   --generate other algorithms while reusing as much code as possible, so it
   --will be easy to maintain and evolve - hardware is already hard enough.
 
-  x_inter(0) <= x_i;
-  y_inter(0) <= y_i;
-  z_inter(0) <= z_i;
+  x_inter(0) <= x_i(x_i'left) & x_i;
+  y_inter(0) <= y_i(y_i'left) & y_i;
+  z_inter(0) <= z_i & "0";
 
-  
+
   CORE_STAGES : for stage in 1 to g_stages generate
 
     control_x(stage) <= (y_inter(stage-1) < 0);
@@ -140,7 +142,7 @@ begin  -- architecture str
     cmp_z_stage : addsub
       port map (
         a_i      => z_inter(stage-1),
-        b_i      => stage_constant(1, stage, z_i'length),
+        b_i      => stage_constant(1, stage, c_width),
         sub_i    => control_x(stage),
         clk_i    => clk_i,
         ce_i     => ce_i,
@@ -148,8 +150,8 @@ begin  -- architecture str
   end generate;
 
   --TODO: Round the output
-  x_o <= x_inter(g_stages);
-  y_o <= y_inter(g_stages);
-  z_o <= z_inter(g_stages);
+  x_o <= x_inter(g_stages)(c_width-1 downto 1);
+  y_o <= y_inter(g_stages)(c_width-1 downto 1);
+  z_o <= z_inter(g_stages)(c_width-1 downto 1);
   
 end architecture str;

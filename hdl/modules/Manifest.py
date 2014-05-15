@@ -1,4 +1,4 @@
 modules = { "local" : [	"cordic_core",
-			"cordic_rotate",
+			"cordic_vectoring",
 			"unc_mult"
                       ] };
