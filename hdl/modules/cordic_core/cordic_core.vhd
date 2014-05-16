@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-05-15
+-- Last update: 2014-05-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -47,6 +47,7 @@ entity cordic_core is
 
   generic (
     g_stages : natural := 20;
+    g_bit_growth : natural := 1;
     g_mode   : string  := "rect_to_polar"
     );
 
@@ -69,7 +70,7 @@ end entity cordic_core;
 -------------------------------------------------------------------------------
 
 architecture str of cordic_core is
-  constant c_width : natural := x_i'length+1;
+  constant c_width : natural := x_i'length + g_bit_growth;
   type wiring is array (0 to g_stages) of signed(c_width-1 downto 0);
   type control_wiring is array (0 to g_stages) of boolean;
 
@@ -97,7 +98,8 @@ architecture str of cordic_core is
     variable const_vector : signed(width-1 downto 0);
   begin
     -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
-    -- only work for cordics up to 32 bit
+    -- Only works for cordics up to 32 bits. Wider constants require
+    -- pre-generated tables, due to limitations in most VHDL tool's
     const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
     return const_vector;
   end function;
@@ -108,9 +110,9 @@ begin  -- architecture str
   --generate other algorithms while reusing as much code as possible, so it
   --will be easy to maintain and evolve - hardware is already hard enough.
 
-  x_inter(0) <= x_i(x_i'left) & x_i;
-  y_inter(0) <= y_i(y_i'left) & y_i;
-  z_inter(0) <= z_i & "0";
+  x_inter(0) <= resize(x_i,c_width);
+  y_inter(0) <= resize(y_i,c_width);
+  z_inter(0) <= z_i & (g_bit_growth-1 downto 0 => '0');  -- left aligned
 
 
   CORE_STAGES : for stage in 1 to g_stages generate
@@ -150,8 +152,8 @@ begin  -- architecture str
   end generate;
 
   --TODO: Round the output
-  x_o <= x_inter(g_stages)(c_width-1 downto 1);
-  y_o <= y_inter(g_stages)(c_width-1 downto 1);
-  z_o <= z_inter(g_stages)(c_width-1 downto 1);
+  x_o <= x_inter(g_stages)(c_width-1 downto g_bit_growth);
+  y_o <= y_inter(g_stages)(c_width-1 downto g_bit_growth);
+  z_o <= z_inter(g_stages)(c_width-1 downto g_bit_growth);
   
 end architecture str;

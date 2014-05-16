@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-03-21
--- Last update: 2014-05-15
+-- Last update: 2014-05-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -46,8 +46,8 @@ architecture test of cordic_bench is
   signal clock   : std_logic := '0';
   signal reset_n : std_logic := '0';
 
-  constant c_width        : natural := 32;
-  constant c_stages       : natural := 32;
+  constant c_width        : natural := 24;
+  constant c_stages       : natural := 24;
   constant c_cordic_delay : natural := c_stages+1;
 
   signal I_in : std_logic_vector(c_width-1 downto 0) := (others => '0');
@@ -96,7 +96,7 @@ begin
     end if;
   end process;
 
-  uut: cordic_vectoring_slv
+  uut : cordic_vectoring_slv
     generic map (
       g_stages => c_stages,
       g_width  => c_width)
