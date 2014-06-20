@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-05-15
+-- Last update: 2014-06-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ begin  -- architecture str
   CORE_STAGES : for stage in 1 to g_stages generate
 
     control_x(stage) <= (y_inter(stage-1) < 0);
-    control_y(stage) <= not(control_x(stage));
+    control_y(stage) <= (y_inter(stage-1) > 0);
 
     x_shifted(stage) <= shift_right(x_inter(stage-1), stage-1);
     y_shifted(stage) <= shift_right(y_inter(stage-1), stage-1);
