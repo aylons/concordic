@@ -6,7 +6,7 @@
 -- Author     : Aylons  <concordic@aylons.com>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-05-14
+-- Last update: 2014-06-25
 -- Platform   : 
 -- Standard   : VHDL'93/02/08
 -------------------------------------------------------------------------------
@@ -43,12 +43,14 @@ use ieee.numeric_std.all;
 entity addsub is
 
   port (
-    a_i      : in  signed;
-    b_i      : in  signed;
-    sub_i    : in  boolean;
-    clk_i    : in  std_logic;
-    ce_i     : in  std_logic;
-    result_o : out signed
+    a_i        : in  signed;
+    b_i        : in  signed;
+    sub_i      : in  boolean;
+    clk_i      : in  std_logic;
+    ce_i       : in  std_logic;
+    result_o   : out signed;
+    positive_o : out boolean;
+    negative_o : out boolean
     );
 
 end entity addsub;
@@ -68,14 +70,18 @@ begin  -- architecture str
     severity error;
 
   process(clk_i) is
+    variable result : signed(result_o'length-1 downto 0);
   begin
     if rising_edge(clk_i) then
       if ce_i = '1' then
         if(sub_i = true) then
-          result_o <= a_i - b_i;
+          result := a_i - b_i;
         else
-          result_o <= a_i + b_i;
+          result := a_i + b_i;
         end if;
+        positive_o <= result(result'left) = '0';
+        negative_o <= result(result'left) = '1';
+        result_o   <= result;
       end if;
     end if;
   end process;

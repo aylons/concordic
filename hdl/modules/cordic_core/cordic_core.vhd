@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-06-20
+-- Last update: 2014-06-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -46,9 +46,9 @@ use ieee.math_real.all;
 entity cordic_core is
 
   generic (
-    g_stages : natural := 20;
+    g_stages     : natural := 20;
     g_bit_growth : natural := 1;
-    g_mode   : string  := "rect_to_polar"
+    g_mode       : string  := "rect_to_polar"
     );
 
   -- x represents the x axis in rectangular coordinates or amplitude in polar
@@ -86,23 +86,25 @@ architecture str of cordic_core is
 
   component addsub is
     port (
-      a_i      : in  signed;
-      b_i      : in  signed;
-      sub_i    : in  boolean;
-      clk_i    : in  std_logic;
-      ce_i     : in  std_logic;
-      result_o : out signed);
+      a_i        : in  signed;
+      b_i        : in  signed;
+      sub_i      : in  boolean;
+      clk_i      : in  std_logic;
+      ce_i       : in  std_logic;
+      result_o   : out signed;
+      positive_o : out boolean;
+      negative_o : out boolean);
   end component addsub;
-
-  function stage_constant(mode, stage, width : natural) return signed is
-    variable const_vector : signed(width-1 downto 0);
-  begin
-    -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
-    -- Only works for cordics up to 32 bits. Wider constants require
-    -- pre-generated tables, due to limitations in most VHDL tool's
-    const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
-    return const_vector;
-  end function;
+  
+function stage_constant(mode, stage, width : natural) return signed is
+  variable const_vector : signed(width-1 downto 0);
+begin
+  -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
+  -- Only works for cordics up to 32 bits. Wider constants require
+  -- pre-generated tables, due to limitations in most VHDL tool's
+  const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
+  return const_vector;
+end function;
 
 begin  -- architecture str
 
@@ -110,45 +112,54 @@ begin  -- architecture str
   --generate other algorithms while reusing as much code as possible, so it
   --will be easy to maintain and evolve - hardware is already hard enough.
 
-  x_inter(0) <= resize(x_i,c_width);
-  y_inter(0) <= resize(y_i,c_width);
+  x_inter(0) <= resize(x_i, c_width);
+  y_inter(0) <= resize(y_i, c_width);
   z_inter(0) <= z_i & (g_bit_growth-1 downto 0 => '0');  -- left aligned
 
+  control_x(0) <= y_i(y_i'left) = '1';
+  control_y(0) <= y_i(y_i'left) = '0';
 
   CORE_STAGES : for stage in 1 to g_stages generate
 
-    control_x(stage) <= (y_inter(stage-1) < 0);
-    control_y(stage) <= (y_inter(stage-1) > 0);
+
+    --control_x(stage) <= y_inter(stage-1) < 0;
+    --control_y(stage) <= y_inter(stage-1) > 0;
 
     x_shifted(stage) <= shift_right(x_inter(stage-1), stage-1);
     y_shifted(stage) <= shift_right(y_inter(stage-1), stage-1);
 
     cmp_x_stage : addsub
       port map(
-        a_i      => x_inter(stage-1),
-        b_i      => y_shifted(stage),
-        sub_i    => control_x(stage),
-        clk_i    => clk_i,
-        ce_i     => ce_i,
-        result_o => x_inter(stage));
+        a_i        => x_inter(stage-1),
+        b_i        => y_shifted(stage),
+        sub_i      => control_x(stage-1),
+        clk_i      => clk_i,
+        ce_i       => ce_i,
+        result_o   => x_inter(stage),
+        positive_o => open,
+        negative_o => open);
 
     cmp_y_stage : addsub
       port map(
-        a_i      => y_inter(stage-1),
-        b_i      => x_shifted(stage),
-        sub_i    => control_y(stage),
-        clk_i    => clk_i,
-        ce_i     => ce_i,
-        result_o => y_inter(stage));
+        a_i        => y_inter(stage-1),
+        b_i        => x_shifted(stage),
+        sub_i      => control_y(stage-1),
+        clk_i      => clk_i,
+        ce_i       => ce_i,
+        result_o   => y_inter(stage),
+        positive_o => control_y(stage),
+        negative_o => control_x(stage));
 
     cmp_z_stage : addsub
       port map (
-        a_i      => z_inter(stage-1),
-        b_i      => stage_constant(1, stage, c_width),
-        sub_i    => control_x(stage),
-        clk_i    => clk_i,
-        ce_i     => ce_i,
-        result_o => z_inter(stage));
+        a_i        => z_inter(stage-1),
+        b_i        => stage_constant(1, stage, c_width),
+        sub_i      => control_x(stage-1),
+        clk_i      => clk_i,
+        ce_i       => ce_i,
+        result_o   => z_inter(stage),
+        positive_o => open,
+        negative_o => open);
   end generate;
 
   --TODO: Round the output
