@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-09
--- Last update: 2014-05-14
+-- Last update: 2014-07-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -54,6 +54,7 @@ entity inversion_stage is
     z_i   : in  signed;
     clk_i : in  std_logic;
     ce_i  : in  std_logic;
+    rst_i : in  std_logic;
     x_o   : out signed;
     y_o   : out signed;
     z_o   : out signed
@@ -64,31 +65,37 @@ end entity inversion_stage;
 -------------------------------------------------------------------------------
 
 architecture str of inversion_stage is
-  constant width          : integer                  := z_i'length;
-  constant rotation_angle : signed := to_signed(integer(-2**(width-1)),width);
+  constant width          : integer := z_i'length;
+  constant rotation_angle : signed  := to_signed(integer(-2**(width-1)), width);
   -- rotate 180o
 
 begin  -- architecture str
 
   process(clk_i) is
-    variable left_halfplane : boolean;
+    variable left_halfplane : boolean := false;
   begin
     if rising_edge(clk_i) then
-      if ce_i = '1' then
+      if rst_i = '1' then
+        x_o <= (x_o'length-1 downto 0 => '0');
+        y_o <= (y_o'length-1 downto 0 => '0');
+        z_o <= (z_o'length-1 downto 0 => '0');
+      else
+        if ce_i = '1' then
 
-        left_halfplane := (x_i < 0);
+          left_halfplane := (x_i < 0);
 
-        if left_halfplane then
-          x_o <= -x_i;
-          y_o <= -y_i;
-          z_o <= rotation_angle;
-        else
-          x_o <= x_i;
-          y_o <= y_i;
-          z_o <= to_signed(0, width);
-        end if;  -- left_halfplane
+          if left_halfplane then
+            x_o <= -x_i;
+            y_o <= -y_i;
+            z_o <= rotation_angle;
+          else
+            x_o <= x_i;
+            y_o <= y_i;
+            z_o <= to_signed(0, width);
+          end if;  -- left_halfplane
 
-      end if;  --clock enable
+        end if;  --clock enable
+      end if;  --reset
     end if;  --rising edge
   end process;
 

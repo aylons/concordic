@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-06-25
+-- Last update: 2014-07-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -60,6 +60,7 @@ entity cordic_core is
     z_i   : in  signed;
     clk_i : in  std_logic;
     ce_i  : in  std_logic;
+    rst_i : in  std_logic;
     x_o   : out signed;
     y_o   : out signed;
     z_o   : out signed
@@ -74,15 +75,15 @@ architecture str of cordic_core is
   type wiring is array (0 to g_stages) of signed(c_width-1 downto 0);
   type control_wiring is array (0 to g_stages) of boolean;
 
-  signal x_inter : wiring;
-  signal y_inter : wiring;
-  signal z_inter : wiring;
+  signal x_inter : wiring := (others => (others => '0'));
+  signal y_inter : wiring := (others => (others => '0'));
+  signal z_inter : wiring := (others => (others => '0'));
 
-  signal x_shifted : wiring;
-  signal y_shifted : wiring;
+  signal x_shifted : wiring := (others => (others => '0'));
+  signal y_shifted : wiring := (others => (others => '0'));
 
-  signal control_x : control_wiring;
-  signal control_y : control_wiring;
+  signal control_x : control_wiring := (others => false);
+  signal control_y : control_wiring := (others => false);
 
   component addsub is
     port (
@@ -91,20 +92,21 @@ architecture str of cordic_core is
       sub_i      : in  boolean;
       clk_i      : in  std_logic;
       ce_i       : in  std_logic;
+      rst_i      : in  std_logic;
       result_o   : out signed;
       positive_o : out boolean;
       negative_o : out boolean);
   end component addsub;
-  
-function stage_constant(mode, stage, width : natural) return signed is
-  variable const_vector : signed(width-1 downto 0);
-begin
-  -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
-  -- Only works for cordics up to 32 bits. Wider constants require
-  -- pre-generated tables, due to limitations in most VHDL tool's
-  const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
-  return const_vector;
-end function;
+
+  function stage_constant(mode, stage, width : natural) return signed is
+    variable const_vector : signed(width-1 downto 0) := (others => '0');
+  begin
+    -- Each iteration must sum or subtract arctg(1/(2^(stage-1)))
+    -- Only works for cordics up to 32 bits. Wider constants require
+    -- pre-generated tables, due to limitations in most VHDL tool's
+    const_vector := to_signed(integer(arctan(2.0**(real(1-stage)))/(MATH_2_PI)*(2.0**real(width))), width);
+    return const_vector;
+  end function;
 
 begin  -- architecture str
 
@@ -135,6 +137,7 @@ begin  -- architecture str
         sub_i      => control_x(stage-1),
         clk_i      => clk_i,
         ce_i       => ce_i,
+        rst_i      => rst_i,
         result_o   => x_inter(stage),
         positive_o => open,
         negative_o => open);
@@ -146,6 +149,7 @@ begin  -- architecture str
         sub_i      => control_y(stage-1),
         clk_i      => clk_i,
         ce_i       => ce_i,
+        rst_i      => rst_i,
         result_o   => y_inter(stage),
         positive_o => control_y(stage),
         negative_o => control_x(stage));
@@ -157,6 +161,7 @@ begin  -- architecture str
         sub_i      => control_x(stage-1),
         clk_i      => clk_i,
         ce_i       => ce_i,
+        rst_i      => rst_i,
         result_o   => z_inter(stage),
         positive_o => open,
         negative_o => open);

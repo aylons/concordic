@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-13
--- Last update: 2014-05-15
+-- Last update: 2014-07-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,12 +48,13 @@ entity cordic_vectoring_slv is
     );
 
   port (
-    x_i     : in  std_logic_vector(g_width-1 downto 0);
-    y_i     : in  std_logic_vector(g_width-1 downto 0);
+    x_i     : in  std_logic_vector(g_width-1 downto 0) := (others => '0');
+    y_i     : in  std_logic_vector(g_width-1 downto 0) := (others => '0');
     clk_i   : in  std_logic;
     ce_i    : in  std_logic;
-    mag_o   : out std_logic_vector(g_width-1 downto 0);
-    phase_o : out std_logic_vector(g_width-1 downto 0)
+    rst_i   : in  std_logic;
+    mag_o   : out std_logic_vector(g_width-1 downto 0) := (others => '0');
+    phase_o : out std_logic_vector(g_width-1 downto 0) := (others => '0')
     );
 
 end entity cordic_vectoring_slv;
@@ -79,6 +80,7 @@ architecture str of cordic_vectoring_slv is
       z_i   : in  signed;
       clk_i : in  std_logic;
       ce_i  : in  std_logic;
+      rst_i : in  std_logic;
       x_o   : out signed;
       y_o   : out signed;
       z_o   : out signed);
@@ -94,6 +96,7 @@ architecture str of cordic_vectoring_slv is
       z_i   : in  signed;
       clk_i : in  std_logic;
       ce_i  : in  std_logic;
+      rst_i : in  std_logic;
       x_o   : out signed;
       y_o   : out signed;
       z_o   : out signed);
@@ -110,6 +113,7 @@ begin  -- architecture str
       z_i   => (g_width-1 downto 0 => '0'),
       clk_i => clk_i,
       ce_i  => ce_i,
+      rst_i => rst_i,
       x_o   => adjusted_x,
       y_o   => adjusted_y,
       z_o   => adjusted_z);
@@ -124,6 +128,7 @@ begin  -- architecture str
       z_i   => adjusted_z,
       clk_i => clk_i,
       ce_i  => ce_i,
+      rst_i => rst_i,
       x_o   => mag_temp,
       y_o   => y_temp,
       z_o   => phase_temp);
