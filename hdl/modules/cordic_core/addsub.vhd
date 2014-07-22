@@ -6,7 +6,7 @@
 -- Author     : Aylons  <concordic@aylons.com>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-07-16
+-- Last update: 2014-07-21
 -- Platform   : 
 -- Standard   : VHDL'93/02/08
 -------------------------------------------------------------------------------
@@ -41,7 +41,6 @@ use ieee.numeric_std.all;
 -------------------------------------------------------------------------------
 
 entity addsub is
-
   port (
     a_i        : in  signed;
     b_i        : in  signed;
@@ -59,7 +58,8 @@ end entity addsub;
 -------------------------------------------------------------------------------
 
 architecture str of addsub is
-
+  constant width  : natural                  := a_i'length;
+  signal a_1, b_1 : signed(width-1 downto 0) := (others => '0');
 begin  -- architecture str
 
   assert a_i'length = b_i'length
@@ -71,19 +71,28 @@ begin  -- architecture str
     severity error;
 
   process(clk_i) is
-    variable result : signed(result_o'length-1 downto 0) := (others => '0');
+    variable result : signed(width-1 downto 0) := (others => '0');
   begin
     if rising_edge(clk_i) then
       if rst_i = '1' then
-        result_o <= (result_o'length-1 downto 0 => '0');
+        a_1        <= (others           => '0');
+        b_1        <= (others           => '0');
+        result_o   <= (width-1 downto 0 => '0');
+        positive_o <= true;
+        negative_o <= false;
       else
         if ce_i = '1' then
 
+          --first stage
+          a_1 <= a_i;
           if(sub_i = true) then
-            result := a_i - b_i;
+            b_1 <= -b_i;
           else
-            result := a_i + b_i;
+            b_1 <= b_i;
           end if;
+
+          --second stage
+          result := a_1 + b_1;
           positive_o <= result(result'left) = '0';
           negative_o <= result(result'left) = '1';
           result_o   <= result;
