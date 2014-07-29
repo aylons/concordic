@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-07-16
+-- Last update: 2014-07-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,15 +55,17 @@ entity cordic_core is
   -- y represents the y axis in rectangular coordinates
   -- z represents phase in polar coordinates
   port (
-    x_i   : in  signed;
-    y_i   : in  signed;
-    z_i   : in  signed;
-    clk_i : in  std_logic;
-    ce_i  : in  std_logic;
-    rst_i : in  std_logic;
-    x_o   : out signed;
-    y_o   : out signed;
-    z_o   : out signed
+    x_i     : in  signed;
+    y_i     : in  signed;
+    z_i     : in  signed;
+    clk_i   : in  std_logic;
+    ce_i    : in  std_logic;
+    rst_i   : in  std_logic;
+    valid_i : in  std_logic;
+    x_o     : out signed;
+    y_o     : out signed;
+    z_o     : out signed;
+    valid_o : out std_logic
     );
 
 end entity cordic_core;
@@ -98,6 +100,17 @@ architecture str of cordic_core is
       negative_o : out boolean);
   end component addsub;
 
+  component pipeline is
+    generic (
+      g_width : natural;
+      g_depth : natural);
+    port (
+      data_i : in  std_logic_vector(g_width-1 downto 0);
+      clk_i  : in  std_logic;
+      ce_i   : in  std_logic;
+      data_o : out std_logic_vector(g_width-1 downto 0));
+  end component pipeline;
+
   function stage_constant(mode, stage, width : natural) return signed is
     variable const_vector : signed(width-1 downto 0) := (others => '0');
   begin
@@ -123,6 +136,15 @@ begin  -- architecture str
 
   CORE_STAGES : for stage in 1 to g_stages generate
 
+    cmp_valid_pipe : pipeline
+      generic map (
+        g_width => 1,
+        g_depth => 3*g_stages)
+      port map (
+        data_i(0) => valid_i,
+        clk_i  => clk_i,
+        ce_i   => ce_i,
+        data_o(0) => valid_o);
 
     --control_x(stage) <= y_inter(stage-1) < 0;
     --control_y(stage) <= y_inter(stage-1) > 0;

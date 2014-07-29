@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-13
--- Last update: 2014-07-16
+-- Last update: 2014-07-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -52,9 +52,11 @@ entity cordic_vectoring_slv is
     y_i     : in  std_logic_vector(g_width-1 downto 0) := (others => '0');
     clk_i   : in  std_logic;
     ce_i    : in  std_logic;
+    valid_i : in  std_logic;
     rst_i   : in  std_logic;
     mag_o   : out std_logic_vector(g_width-1 downto 0) := (others => '0');
-    phase_o : out std_logic_vector(g_width-1 downto 0) := (others => '0')
+    phase_o : out std_logic_vector(g_width-1 downto 0) := (others => '0');
+    valid_o : out std_logic
     );
 
 end entity cordic_vectoring_slv;
@@ -71,19 +73,23 @@ architecture str of cordic_vectoring_slv is
   signal phase_temp : signed(g_width-1 downto 0) := (others => '0');
   signal y_temp     : signed(g_width-1 downto 0) := (others => '0');
 
+  signal valid_temp : std_logic := '0';
+
   component inversion_stage is
     generic (
       g_mode : string);
     port (
-      x_i   : in  signed;
-      y_i   : in  signed;
-      z_i   : in  signed;
-      clk_i : in  std_logic;
-      ce_i  : in  std_logic;
-      rst_i : in  std_logic;
-      x_o   : out signed;
-      y_o   : out signed;
-      z_o   : out signed);
+      x_i     : in  signed;
+      y_i     : in  signed;
+      z_i     : in  signed;
+      clk_i   : in  std_logic;
+      ce_i    : in  std_logic;
+      valid_i : in  std_logic;
+      rst_i   : in  std_logic;
+      x_o     : out signed;
+      y_o     : out signed;
+      z_o     : out signed;
+      valid_o : out std_logic);
   end component inversion_stage;
 
   component cordic_core is
@@ -91,15 +97,17 @@ architecture str of cordic_vectoring_slv is
       g_stages : natural;
       g_mode   : string);
     port (
-      x_i   : in  signed;
-      y_i   : in  signed;
-      z_i   : in  signed;
-      clk_i : in  std_logic;
-      ce_i  : in  std_logic;
-      rst_i : in  std_logic;
-      x_o   : out signed;
-      y_o   : out signed;
-      z_o   : out signed);
+      x_i     : in  signed;
+      y_i     : in  signed;
+      z_i     : in  signed;
+      clk_i   : in  std_logic;
+      ce_i    : in  std_logic;
+      valid_i : in  std_logic;
+      rst_i   : in  std_logic;
+      x_o     : out signed;
+      y_o     : out signed;
+      z_o     : out signed;
+      valid_o : out std_logic);
   end component cordic_core;
   
 begin  -- architecture str
@@ -108,30 +116,34 @@ begin  -- architecture str
     generic map (
       g_mode => "rect_to_polar")
     port map (
-      x_i   => signed(x_i),
-      y_i   => signed(y_i),
-      z_i   => (g_width-1 downto 0 => '0'),
-      clk_i => clk_i,
-      ce_i  => ce_i,
-      rst_i => rst_i,
-      x_o   => adjusted_x,
-      y_o   => adjusted_y,
-      z_o   => adjusted_z);
+      x_i     => signed(x_i),
+      y_i     => signed(y_i),
+      z_i     => (g_width-1 downto 0 => '0'),
+      clk_i   => clk_i,
+      ce_i    => ce_i,
+      rst_i   => rst_i,
+      valid_i => valid_i,
+      x_o     => adjusted_x,
+      y_o     => adjusted_y,
+      z_o     => adjusted_z,
+      valid_o => valid_temp);
 
   cmp_core : cordic_core
     generic map (
       g_stages => g_stages,
       g_mode   => "rect_to_polar")
     port map (
-      x_i   => adjusted_x,
-      y_i   => adjusted_y,
-      z_i   => adjusted_z,
-      clk_i => clk_i,
-      ce_i  => ce_i,
-      rst_i => rst_i,
-      x_o   => mag_temp,
-      y_o   => y_temp,
-      z_o   => phase_temp);
+      x_i     => adjusted_x,
+      y_i     => adjusted_y,
+      z_i     => adjusted_z,
+      clk_i   => clk_i,
+      ce_i    => ce_i,
+      rst_i   => rst_i,
+      valid_i => valid_temp,
+      x_o     => mag_temp,
+      y_o     => y_temp,
+      z_o     => phase_temp,
+      valid_o => valid_o);
 
   mag_o   <= std_logic_vector(mag_temp);
   phase_o <= std_logic_vector(phase_temp);

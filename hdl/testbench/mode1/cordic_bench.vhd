@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-03-21
--- Last update: 2014-05-16
+-- Last update: 2014-07-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ architecture test of cordic_bench is
 
   signal mag_out   : std_logic_vector(c_width-1 downto 0);
   signal phase_out : std_logic_vector(c_width-1 downto 0);
-
+  signal valid     : std_logic;
   signal endoffile : std_logic := '0';
 
 
@@ -64,14 +64,17 @@ architecture test of cordic_bench is
       g_stages : natural;
       g_width  : natural);
     port (
-      x_i     : in  std_logic_vector(g_width-1 downto 0);
-      y_i     : in  std_logic_vector(g_width-1 downto 0);
+      x_i     : in  std_logic_vector(g_width-1 downto 0) := (others => '0');
+      y_i     : in  std_logic_vector(g_width-1 downto 0) := (others => '0');
       clk_i   : in  std_logic;
       ce_i    : in  std_logic;
-      mag_o   : out std_logic_vector(g_width-1 downto 0);
-      phase_o : out std_logic_vector(g_width-1 downto 0));
+      valid_i : in  std_logic;
+      rst_i   : in  std_logic;
+      mag_o   : out std_logic_vector(g_width-1 downto 0) := (others => '0');
+      phase_o : out std_logic_vector(g_width-1 downto 0) := (others => '0');
+      valid_o : out std_logic);
   end component cordic_vectoring_slv;
-
+  
 begin
 
   clk_gen : process
@@ -104,9 +107,12 @@ begin
       x_i     => I_in,
       y_i     => Q_in,
       clk_i   => clock,
+      valid_i => '1',
       ce_i    => '1',
+      rst_i   => '0',
       mag_o   => mag_out,
-      phase_o => phase_out);
+      phase_o => phase_out,
+      valid_o => valid);
 
   sample_read : process(clock)
     file vect_file            : text open read_mode is "vectoring_in.dat";
@@ -138,7 +144,7 @@ begin
 --    variable counter    : natural = cordic_delay;
   begin
     if rising_edge(clock) then
-      if(endoffile = '0') then
+      if(endoffile = '0' and valid = '1') then
         mag := to_integer(unsigned(mag_out));
         write(cur_line, mag);
 
