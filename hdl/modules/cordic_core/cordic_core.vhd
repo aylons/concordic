@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-07-28
+-- Last update: 2014-09-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -134,17 +134,18 @@ begin  -- architecture str
   control_x(0) <= y_i(y_i'left) = '1';
   control_y(0) <= y_i(y_i'left) = '0';
 
-  CORE_STAGES : for stage in 1 to g_stages generate
+  cmp_valid_pipe : pipeline
+    generic map (
+      g_width => 1,
+      g_depth => 3*g_stages)
+    port map (
+      data_i(0) => valid_i,
+      clk_i     => clk_i,
+      ce_i      => ce_i,
+      data_o(0) => valid_o);
 
-    cmp_valid_pipe : pipeline
-      generic map (
-        g_width => 1,
-        g_depth => 3*g_stages)
-      port map (
-        data_i(0) => valid_i,
-        clk_i  => clk_i,
-        ce_i   => ce_i,
-        data_o(0) => valid_o);
+  
+  CORE_STAGES : for stage in 1 to g_stages generate
 
     --control_x(stage) <= y_inter(stage-1) < 0;
     --control_y(stage) <= y_inter(stage-1) > 0;
