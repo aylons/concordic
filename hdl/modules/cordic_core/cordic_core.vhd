@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-09-09
+-- Last update: 2014-09-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -191,8 +191,8 @@ begin  -- architecture str
   end generate;
 
   --TODO: Round the output
-  x_o <= x_inter(g_stages)(c_width-1 downto g_bit_growth);
-  y_o <= y_inter(g_stages)(c_width-1 downto g_bit_growth);
-  z_o <= z_inter(g_stages)(c_width-1 downto g_bit_growth);
+  x_o <= x_inter(g_stages)(c_width-2 downto g_bit_growth-1);
+  y_o <= y_inter(g_stages)(c_width-2 downto g_bit_growth-1);
+  z_o <= z_inter(g_stages)(c_width-2 downto g_bit_growth-1);
   
 end architecture str;
