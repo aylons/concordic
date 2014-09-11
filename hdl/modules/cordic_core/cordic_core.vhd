@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-09-10
+-- Last update: 2014-09-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ begin  -- architecture str
   cmp_valid_pipe : pipeline
     generic map (
       g_width => 1,
-      g_depth => 3*g_stages)
+      g_depth => 2*g_stages)
     port map (
       data_i(0) => valid_i,
       clk_i     => clk_i,
