@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-13
--- Last update: 2014-07-28
+-- Last update: 2014-09-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -37,6 +37,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
+
 
 -------------------------------------------------------------------------------
 
@@ -94,8 +96,9 @@ architecture str of cordic_vectoring_slv is
 
   component cordic_core is
     generic (
-      g_stages : natural;
-      g_mode   : string);
+      g_stages     : natural;
+      g_mode       : string;
+      g_bit_growth : natural);
     port (
       x_i     : in  signed;
       y_i     : in  signed;
@@ -131,23 +134,24 @@ begin  -- architecture str
   cmp_core : cordic_core
     generic map (
       g_stages => g_stages,
-      g_mode   => "rect_to_polar")
-    port map (
-      x_i     => adjusted_x,
-      y_i     => adjusted_y,
-      z_i     => adjusted_z,
-      clk_i   => clk_i,
-      ce_i    => ce_i,
-      rst_i   => rst_i,
-      valid_i => valid_temp,
-      x_o     => mag_temp,
-      y_o     => y_temp,
-      z_o     => phase_temp,
-      valid_o => valid_o);
+      g_mode   => "rect_to_polar",
+      g_bit_growth => natural(ceil(log2(real(g_stages)))))
+      port map (
+        x_i     => adjusted_x,
+        y_i     => adjusted_y,
+        z_i     => adjusted_z,
+        clk_i   => clk_i,
+        ce_i    => ce_i,
+        rst_i   => rst_i,
+        valid_i => valid_temp,
+        x_o     => mag_temp,
+        y_o     => y_temp,
+        z_o     => phase_temp,
+        valid_o => valid_o);
 
-  mag_o   <= std_logic_vector(mag_temp);
-  phase_o <= std_logic_vector(phase_temp);
+      mag_o   <= std_logic_vector(mag_temp);
+      phase_o <= std_logic_vector(phase_temp);
 
-end architecture str;
+      end architecture str;
 
 -------------------------------------------------------------------------------
