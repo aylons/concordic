@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-05-09
--- Last update: 2014-07-16
+-- Last update: 2014-09-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -49,15 +49,17 @@ entity inversion_stage is
     );
 
   port (
-    x_i   : in  signed;
-    y_i   : in  signed;
-    z_i   : in  signed;
-    clk_i : in  std_logic;
-    ce_i  : in  std_logic;
-    rst_i : in  std_logic;
-    x_o   : out signed;
-    y_o   : out signed;
-    z_o   : out signed
+    x_i     : in  signed;
+    y_i     : in  signed;
+    z_i     : in  signed;
+    clk_i   : in  std_logic;
+    ce_i    : in  std_logic;
+    valid_i : in  std_logic;
+    rst_i   : in  std_logic;
+    x_o     : out signed;
+    y_o     : out signed;
+    z_o     : out signed;
+    valid_o : out std_logic := '0'
     );
 
 end entity inversion_stage;
@@ -79,6 +81,7 @@ begin  -- architecture str
         x_o <= (x_o'length-1 downto 0 => '0');
         y_o <= (y_o'length-1 downto 0 => '0');
         z_o <= (z_o'length-1 downto 0 => '0');
+        valid_o <= '0';
       else
         if ce_i = '1' then
 
@@ -94,6 +97,7 @@ begin  -- architecture str
             z_o <= to_signed(0, width);
           end if;  -- left_halfplane
 
+          valid_o <= valid_i;
         end if;  --clock enable
       end if;  --reset
     end if;  --rising edge
