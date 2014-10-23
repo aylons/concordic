@@ -6,7 +6,7 @@
 -- Author     : Aylons  <aylons@aylons-yoga2>
 -- Company    : 
 -- Created    : 2014-05-03
--- Last update: 2014-07-16
+-- Last update: 2014-09-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ entity cordic_core is
 
   generic (
     g_stages     : natural := 20;
-    g_bit_growth : natural := 1;
+    g_bit_growth : natural := 2;
     g_mode       : string  := "rect_to_polar"
     );
 
@@ -55,15 +55,17 @@ entity cordic_core is
   -- y represents the y axis in rectangular coordinates
   -- z represents phase in polar coordinates
   port (
-    x_i   : in  signed;
-    y_i   : in  signed;
-    z_i   : in  signed;
-    clk_i : in  std_logic;
-    ce_i  : in  std_logic;
-    rst_i : in  std_logic;
-    x_o   : out signed;
-    y_o   : out signed;
-    z_o   : out signed
+    x_i     : in  signed;
+    y_i     : in  signed;
+    z_i     : in  signed;
+    clk_i   : in  std_logic;
+    ce_i    : in  std_logic;
+    rst_i   : in  std_logic;
+    valid_i : in  std_logic;
+    x_o     : out signed;
+    y_o     : out signed;
+    z_o     : out signed;
+    valid_o : out std_logic
     );
 
 end entity cordic_core;
@@ -71,13 +73,14 @@ end entity cordic_core;
 -------------------------------------------------------------------------------
 
 architecture str of cordic_core is
-  constant c_width : natural := x_i'length + g_bit_growth;
+  constant c_width : natural := x_i'length + g_bit_growth + 2;
   type wiring is array (0 to g_stages) of signed(c_width-1 downto 0);
   type control_wiring is array (0 to g_stages) of boolean;
+  type z_wiring is array (0 to g_stages) of signed(x_i'length-1 downto 0);
 
   signal x_inter : wiring := (others => (others => '0'));
   signal y_inter : wiring := (others => (others => '0'));
-  signal z_inter : wiring := (others => (others => '0'));
+  signal z_inter : z_wiring := (others => (others => '0'));
 
   signal x_shifted : wiring := (others => (others => '0'));
   signal y_shifted : wiring := (others => (others => '0'));
@@ -98,6 +101,17 @@ architecture str of cordic_core is
       negative_o : out boolean);
   end component addsub;
 
+  component pipeline is
+    generic (
+      g_width : natural;
+      g_depth : natural);
+    port (
+      data_i : in  std_logic_vector(g_width-1 downto 0);
+      clk_i  : in  std_logic;
+      ce_i   : in  std_logic;
+      data_o : out std_logic_vector(g_width-1 downto 0));
+  end component pipeline;
+
   function stage_constant(mode, stage, width : natural) return signed is
     variable const_vector : signed(width-1 downto 0) := (others => '0');
   begin
@@ -114,15 +128,25 @@ begin  -- architecture str
   --generate other algorithms while reusing as much code as possible, so it
   --will be easy to maintain and evolve - hardware is already hard enough.
 
-  x_inter(0) <= resize(x_i, c_width);
-  y_inter(0) <= resize(y_i, c_width);
-  z_inter(0) <= z_i & (g_bit_growth-1 downto 0 => '0');  -- left aligned
+  x_inter(0) <= resize(x_i, x_i'length+2) & (g_bit_growth-1 downto 0 => '0');
+  y_inter(0) <= resize(y_i, y_i'length+2) & (g_bit_growth-1 downto 0 => '0');
+  z_inter(0) <= z_i;  -- left aligned
 
   control_x(0) <= y_i(y_i'left) = '1';
   control_y(0) <= y_i(y_i'left) = '0';
 
-  CORE_STAGES : for stage in 1 to g_stages generate
+  cmp_valid_pipe : pipeline
+    generic map (
+      g_width => 1,
+      g_depth => 2*g_stages)
+    port map (
+      data_i(0) => valid_i,
+      clk_i     => clk_i,
+      ce_i      => ce_i,
+      data_o(0) => valid_o);
 
+  
+  CORE_STAGES : for stage in 1 to g_stages generate
 
     --control_x(stage) <= y_inter(stage-1) < 0;
     --control_y(stage) <= y_inter(stage-1) > 0;
@@ -157,7 +181,7 @@ begin  -- architecture str
     cmp_z_stage : addsub
       port map (
         a_i        => z_inter(stage-1),
-        b_i        => stage_constant(1, stage, c_width),
+        b_i        => stage_constant(1, stage, x_i'length),
         sub_i      => control_x(stage-1),
         clk_i      => clk_i,
         ce_i       => ce_i,
@@ -168,8 +192,8 @@ begin  -- architecture str
   end generate;
 
   --TODO: Round the output
-  x_o <= x_inter(g_stages)(c_width-1 downto g_bit_growth);
-  y_o <= y_inter(g_stages)(c_width-1 downto g_bit_growth);
-  z_o <= z_inter(g_stages)(c_width-1 downto g_bit_growth);
+  x_o <= x_inter(g_stages)(c_width-1 downto g_bit_growth+2);
+  y_o <= y_inter(g_stages)(c_width-1 downto g_bit_growth+2);
+  z_o <= z_inter(g_stages);
   
 end architecture str;
