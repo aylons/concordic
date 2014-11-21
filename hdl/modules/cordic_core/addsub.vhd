@@ -1,13 +1,13 @@
 -------------------------------------------------------------------------------
 -- Title      : Dynamic adder/subtractor
--- Project    : 
+-- Project    :
 -------------------------------------------------------------------------------
 -- File       : addsub.vhd
 -- Author     : Aylons  <concordic@aylons.com>
--- Company    : 
+-- Company    :
 -- Created    : 2014-05-03
 -- Last update: 2014-07-21
--- Platform   : 
+-- Platform   :
 -- Standard   : VHDL'93/02/08
 -------------------------------------------------------------------------------
 -- Description: Depening on sub_i, result_o may be a_i + b_i or a_i - b_i.
@@ -27,7 +27,7 @@
 --
 -- You should have received a copy of the GNU General Public License
 -- along with Foobar. If not, see <http://www.gnu.org/licenses/>.
--- Copyright (c) 2014 
+-- Copyright (c) 2014
 -------------------------------------------------------------------------------
 -- Revisions  :
 -- Date        Version  Author  Description
@@ -75,30 +75,31 @@ begin  -- architecture str
   begin
     if rising_edge(clk_i) then
       if rst_i = '1' then
-        a_1        <= (others           => '0');
-        b_1        <= (others           => '0');
+        --a_1        <= (others           => '0');
+        --b_1        <= (others           => '0');
         result_o   <= (width-1 downto 0 => '0');
         positive_o <= true;
         negative_o <= false;
       else
         if ce_i = '1' then
 
-          --first stage
-          a_1 <= a_i;
-          if(sub_i = true) then
-            b_1 <= -b_i;
-          else
-            b_1 <= b_i;
-          end if;
+          ----first stage
+          --a_1 <= a_i;
+          --if(sub_i = true) then
+          --  b_1 <= -b_i;
+          --else
+          --  b_1 <= b_i;
+          --end if;
 
           --second stage
-          result := a_1 + b_1;
+          --result := a_1 + b_1;
+          result := a_i + b_i when sub_i = false else a_i - b_i;
           positive_o <= result(result'left) = '0';
           negative_o <= result(result'left) = '1';
           result_o   <= result;
         end if;
       end if;
-      
+
     end if;
   end process;
 
