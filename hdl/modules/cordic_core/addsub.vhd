@@ -58,8 +58,9 @@ end entity addsub;
 -------------------------------------------------------------------------------
 
 architecture str of addsub is
-  constant width  : natural                  := a_i'length;
-  signal a_1, b_1 : signed(width-1 downto 0) := (others => '0');
+  constant width      : natural                  := a_i'length;
+  signal a_1, b_1     : signed(width-1 downto 0) := (others => '0');
+  signal mux_result   : signed (width-1 downto 0) := (others => '0');
 begin  -- architecture str
 
   assert a_i'length = b_i'length
@@ -75,25 +76,13 @@ begin  -- architecture str
   begin
     if rising_edge(clk_i) then
       if rst_i = '1' then
-        --a_1        <= (others           => '0');
-        --b_1        <= (others           => '0');
         result_o   <= (width-1 downto 0 => '0');
         positive_o <= true;
         negative_o <= false;
       else
         if ce_i = '1' then
+          result     := mux_result;
 
-          ----first stage
-          --a_1 <= a_i;
-          --if(sub_i = true) then
-          --  b_1 <= -b_i;
-          --else
-          --  b_1 <= b_i;
-          --end if;
-
-          --second stage
-          --result := a_1 + b_1;
-          result := a_i + b_i when sub_i = false else a_i - b_i;
           positive_o <= result(result'left) = '0';
           negative_o <= result(result'left) = '1';
           result_o   <= result;
@@ -102,6 +91,8 @@ begin  -- architecture str
 
     end if;
   end process;
+
+  mux_result <= a_i + b_i when (not sub_i) else a_i - b_i;
 
 end architecture str;
 
