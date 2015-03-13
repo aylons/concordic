@@ -6,7 +6,7 @@
 -- Author     : aylons  <aylons@LNLS190>
 -- Company    : 
 -- Created    : 2014-09-03
--- Last update: 2014-10-11
+-- Last update: 2014-11-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -223,7 +223,7 @@ begin  -- architecture str
   -- Metadata
   metadata_sink <= tgd_sink & adr_sink;
   ack_sink      <= not(full_meta) and ce_i and valid_sink;
-  ack_source    <= soruce_req and ce_i and valid_source;
+  ack_source    <= source_req and ce_i and valid_source;
   -- Stop accepting new data if full
 
   cmp_metadata : decoupled_fifo
